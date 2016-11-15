@@ -1,13 +1,23 @@
 require "bitbucket_snagger/version"
-require "bitbucket"
+require "bitbucket_rest_api"
 require 'escort'
 require 'git'
 
 module BitbucketSnagger
   class BitbucketSnagger < ::Escort::ActionCommand::Base
-    def initialize(username, password)
+    def initialize(options, arguments)
+      @options = options
+      @arguments = arguments
+
+      @username   = @options[:global][:options][:username]
+      @password   = @options[:global][:options][:password]
+      @base_url   = @options[:global][:options][:base_url]
+      @project    = @options[:global][:options][:project]
+      @repo       = @options[:global][:options][:repo]
+      @upstream   = @options[:global][:options][:upstream]
+
       Escort::Logger.output.puts "loggin in to bitbucket..."
-      @bitbucket = BitBucket.new basic_auth: "#{username}:#{password}"
+      @bitbucket = BitBucket.new basic_auth: "#{@username}:#{@password}"
       Escort::Logger.output.puts "...done!"
     end
 
@@ -16,7 +26,7 @@ module BitbucketSnagger
       Escort::Logger.output.puts "#{project}/#{repo} status: #{status}"
     end
 
-    def create_repo(project, repo, upstream, description)
+    def create_repo(project, repo, upstream)
       description = "fixme, add a description"
       if ! repo_exists?(project, repo)
         Escort::Logger.output.puts "Creating #{project}/#{repo}"
@@ -32,9 +42,16 @@ module BitbucketSnagger
     end
 
 
-    def sync_repo(base_url, project, repo, upstream)
+    def sync_repo()
+      # local scope the instance variables instead of changing scope - maybe
+      # I will do something cooler here one day..
+      repo = @repo
+      project = @project
+      base_url = @base_url
+      upstream = @upstream
+
       # create repo on bitbucket server if needed
-      create_repo(project, repo)
+      create_repo(project, repo, upstream)
 
       # checkout the repo as a regular git repo using git api for ruby
       Escort::Logger.output.puts "Updating #{repo}..."

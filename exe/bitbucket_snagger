@@ -42,6 +42,14 @@ Escort::App.create do |app|
   end
 
   app.command :snag do |command|
-    BitbucketSnagger::BitbucketSnagger.new(username, password).status()
+    command.summary "snag a module"
+    command.description "create a repo if needed and sync it to upstream"
+    command.action do |options, arguments|
+      begin
+        BitbucketSnagger::BitbucketSnagger.new(options, arguments).sync_repo()
+      rescue BitBucket::Error::Unauthorized => e
+        Escort::Logger.output.puts "BitBucket authentication error! (#{e.message})"
+      end
+    end
   end
 end
