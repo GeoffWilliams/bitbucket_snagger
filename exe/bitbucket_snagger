@@ -1,0 +1,47 @@
+#!/usr/bin/env ruby
+
+require 'bitbucket_snagger'
+require 'escort'
+
+Escort::App.create do |app|
+  app.version "0.0.1"
+  app.summary "bitbucket_snagger"
+  app.description "Snag git repos and upload them to bitbucket :D"
+
+  app.options do |opts|
+    opts.opt :username,
+      'BitBucket username',
+      :long => '--username',
+      :type => :string
+
+      opts.opt :password,
+        'BitBucket password',
+        :long => '--password',
+        :type => :string
+
+      opts.opt :base_url,
+        'Base URL to access bitbucket, eg https://code.megacorp.com/scm',
+        :long => '--base-url',
+        :type => :string
+
+      opts.opt :project,
+        'BitBucket project name',
+        :long => '--project',
+        :type => :string
+
+      opts.opt :repo,
+        'BitBucket repo name',
+        :long => '--repo',
+        :type => :string
+
+      opts.opt :upstream,
+        'Upstream repo URL',
+        :long => '--upstream',
+        :type => :string
+
+  end
+
+  app.command :snag do |command|
+    BitbucketSnagger::BitbucketSnagger.new(username, password).status()
+  end
+end
