@@ -25,7 +25,7 @@ Escort::App.create do |app|
         :type => :string
 
       opts.opt :project,
-        'BitBucket project name',
+        'BitBucket project key.  Not to be confused with the project name, eg puppet project often has a project key "pup"',
         :long => '--project',
         :type => :string
 
@@ -39,17 +39,18 @@ Escort::App.create do |app|
         :long => '--upstream',
         :type => :string
 
+      opts.opt :insecure,
+        'Force insecure credential transmission (http)',
+        :long     => '--insecure',
+        :type     => :boolean,
+        :default  => false
   end
 
   app.command :snag do |command|
     command.summary "snag a module"
     command.description "create a repo if needed and sync it to upstream"
     command.action do |options, arguments|
-      begin
-        BitbucketSnagger::BitbucketSnagger.new(options, arguments).sync_repo()
-      rescue BitBucket::Error::Unauthorized => e
-        Escort::Logger.output.puts "BitBucket authentication error! (#{e.message})"
-      end
+      BitbucketSnagger::BitbucketSnagger.new(options, arguments).sync_repo()
     end
   end
 end

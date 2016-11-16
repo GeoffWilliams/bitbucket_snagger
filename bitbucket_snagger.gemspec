@@ -33,6 +33,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake", "~> 10.0"
 
   spec.add_runtime_dependency "escort", "0.4.0"
-  spec.add_runtime_dependency "bitbucket_rest_api", "0.1.7"
-  spec.add_runtime_dependency "git", "1.3.0"
+  spec.add_runtime_dependency "rest-client", "2.0.0"
 end
