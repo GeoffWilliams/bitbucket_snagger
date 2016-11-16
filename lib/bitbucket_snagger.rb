@@ -89,11 +89,10 @@ module BitbucketSnagger
       create_repo(projectKey, repositorySlug, upstream)
 
       # checkout the repo as a regular git repo using git api for ruby
-      Escort::Logger.output.puts "Updating #{repositorySlug}..."
       url = get_clone_url()
 
       working_dir = Dir.mktmpdir
-      Escort::Logger.output.puts "working in #{working_dir}"
+      Escort::Logger.output.puts "updating #{repositorySlug} from #{upstream} in #{working_dir}..."
       %x(
         git clone #{url} #{working_dir} && \
         cd #{working_dir} && \
@@ -101,28 +100,8 @@ module BitbucketSnagger
         git pull upstream master && \
         git push origin master
       )
-
-      # g = Git.clone(bb_checkout_url, repo, :path => working_dir)
-      #
-      # # add a remote for upstream
-      # r = g.add_remote('upstream', upstream)
-      #
-      # # sync our forks master branch
-      # Escort::Logger.output.puts "...pulling changes from #{upstream}"
-      # g.pull('upstream', 'master')
-      #
-      # # push changes back to master
-      # Escort::Logger.output.puts "...pushing changes to bitbucket"
-      # g.push('origin', 'master')
-      #
-      # # example of how to set name and email if commits are being refused
-      # # g.config('user.name', 'Scott Chacon')
-      # # g.config('user.email', 'email@email.com')
-      # Escort::Logger.output.puts "...All done, cleaning up!"
-      # FileUtils.rm_rf working_dir
-
-
-#      Escort::Logger.output.puts "BitBucket authentication error! (#{e.message})"
+      Escort::Logger.output.puts "...All done, cleaning up!"
+      FileUtils.rm_rf working_dir
 
     end
   end
