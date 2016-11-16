@@ -98,7 +98,7 @@ module BitbucketSnagger
         cd #{working_dir} && \
         git remote add upstream #{upstream} && \
         git pull upstream master && \
-        git push origin master
+        git push origin master --tags
       )
       Escort::Logger.output.puts "...All done, cleaning up!"
       FileUtils.rm_rf working_dir
