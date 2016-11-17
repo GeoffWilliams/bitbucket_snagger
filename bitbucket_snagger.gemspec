@@ -34,4 +34,6 @@ Gem::Specification.new do |spec|
 
   spec.add_runtime_dependency "escort", "0.4.0"
   spec.add_runtime_dependency "rest-client", "2.0.0"
+  spec.add_runtime_dependency 'inifile', '3.0.0'
+
 end

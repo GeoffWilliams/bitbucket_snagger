@@ -9,41 +9,20 @@ Escort::App.create do |app|
   app.description "Snag git repos and upload them to bitbucket :D"
 
   app.options do |opts|
-    opts.opt :username,
-      'BitBucket username',
-      :long => '--username',
-      :type => :string
-
-      opts.opt :password,
-        'BitBucket password',
-        :long => '--password',
+      opts.opt :projectKey,
+        'BitBucket projectKey.  Not to be confused with the project name, eg puppet project often has a project key "pup"',
+        :long => '--projectKey',
         :type => :string
 
-      opts.opt :base_url,
-        'Base URL to access bitbucket, eg https://code.megacorp.com/scm',
-        :long => '--base-url',
-        :type => :string
-
-      opts.opt :project,
-        'BitBucket project key.  Not to be confused with the project name, eg puppet project often has a project key "pup"',
-        :long => '--project',
-        :type => :string
-
-      opts.opt :repo,
+      opts.opt :repositorySlug,
         'BitBucket repo name',
-        :long => '--repo',
+        :long => '--repositorySlug',
         :type => :string
 
       opts.opt :upstream,
         'Upstream repo URL',
         :long => '--upstream',
         :type => :string
-
-      opts.opt :insecure,
-        'Force insecure credential transmission (http)',
-        :long     => '--insecure',
-        :type     => :boolean,
-        :default  => false
   end
 
   app.command :snag do |command|
@@ -51,6 +30,14 @@ Escort::App.create do |app|
     command.description "create a repo if needed and sync it to upstream"
     command.action do |options, arguments|
       BitbucketSnagger::BitbucketSnagger.new(options, arguments).sync_repo()
+    end
+  end
+
+  app.command :logout do |command|
+    command.summary "logout"
+    command.description "remove credentials from ~/.bitbucket_snagger.ini"
+    command.action do |options, arguments|
+      BitbucketSnagger::BitbucketSnagger.new(options, arguments).logout()
     end
   end
 end

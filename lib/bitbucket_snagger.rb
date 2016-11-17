@@ -4,29 +4,82 @@ require 'escort'
 require 'json'
 require 'rest-client'
 
+# not inistyle!
+require 'inifile'
+
+
 module BitbucketSnagger
   class BitbucketSnagger < ::Escort::ActionCommand::Base
     def initialize(options, arguments)
       @options = options
       @arguments = arguments
 
-      @insecure       = @options[:global][:options][:insecure]
-      @username       = @options[:global][:options][:username]
-      @password       = @options[:global][:options][:password]
-      @base_url       = @options[:global][:options][:base_url]
-      @projectKey     = @options[:global][:options][:project]
-      @repositorySlug = @options[:global][:options][:repo]
+      @credentials    = File.join(ENV['HOME'], '/.bitbucket_snagger.ini')
+      load_credentials()
+      @projectKey     = @options[:global][:options][:projectKey]
+      @repositorySlug = @options[:global][:options][:repositorySlug]
       @upstream       = @options[:global][:options][:upstream]
 
+      # fixme - I'm sure there's a better way to do this...
+      if @projectKey.empty?
+        raise Escort::UserError.new("Need a value for --projectKey")
+      end
+      if @repositorySlug.empty?
+        raise Escort::UserError.new("Need a value for --repositorySlug")
+      end
+      if @upstream.empty?
+        raise Escort::UserError.new("Need a value for --upstream")
+      end
+    end
+
+    def load_credentials
+      if File.exists?(@credentials)
+        # must do a bitwise and to get the permissions bits
+        mode = File.stat(@credentials).mode & 0777
+        if mode == 0600
+          myini = IniFile.load(@credentials, {:default => '__GLOBAL__'})
+
+          # username
+          if myini['__GLOBAL__']['username'].empty?
+            raise Escort::UserError.new("username not specified in #{@credentials}")
+          else
+            @username = myini['__GLOBAL__']['username']
+          end
+
+          # password
+          if myini['__GLOBAL__']['password'].empty?
+            raise Escort::UserError.new("password not specified in #{@credentials}")
+          else
+            @password = myini['__GLOBAL__']['password']
+          end
+
+          # base url
+          if myini['__GLOBAL__']['schema'].empty?
+            raise Escort::UserError.new("schema not specified in #{@credentials}")
+          else
+            @schema = myini['__GLOBAL__']['schema']
+          end
+
+          # base url
+          if myini['__GLOBAL__']['base_url'].empty?
+            raise Escort::UserError.new("base_url not specified in #{@credentials}")
+          else
+            @base_url = myini['__GLOBAL__']['base_url']
+          end
+
+        else
+          raise Escort::UserError.new("Permissions on #{@credentials} are too lax - must be 0600")
+        end
+      else
+        raise Escort::UserError.new("File not found reading credentials at #{@credentials}")
+      end
     end
 
     def get_url(cmd)
-      if @insecure
-        schema = "http"
-      else
-        schema = "https"
+      if @schema == 'http'
+        Escort::Logger.output.puts "[WARN] Using insecure http access for #{@base_url}"
       end
-      "#{schema}://#{@username}:#{@password}@#{@base_url}#{cmd}"
+      "#{@schema}://#{@username}:#{@password}@#{@base_url}#{cmd}"
     end
 
     def get_clone_url()
@@ -46,11 +99,14 @@ module BitbucketSnagger
         response = RestClient.get url, {accept: :json}
         if response.code == 200
           status = true
+          Escort::Logger.output.puts "#{projectKey}/#{repositorySlug} already exists - will update"
         end
       rescue RestClient::Exception => e
-        Escort::Logger.output.puts "[WARN] #{e.message}: #{projectKey}/#{repositorySlug}"
+        Escort::Logger.error.error "[WARN] #{e.message}: #{projectKey}/#{repositorySlug}"
+      rescue Errno::ECONNREFUSED => e
+        # dont continue if server down
+        raise Escort::UserError.new("[ERROR] #{e.message} for #{url}")
       end
-      Escort::Logger.output.puts "#{projectKey}/#{repositorySlug} status: #{status}"
       status
     end
 
@@ -71,11 +127,21 @@ module BitbucketSnagger
             status = true
           end
         rescue RestClient::Exception => e
-          Escort::Logger.output.puts "#{e.message}: #{url}"
+          Escort::Logger.error.error "#{e.message}: #{url}"
+        rescue Errno::ECONNREFUSED => e
+          raise Escort::UserError.new("[ERROR] #{e.message} for #{url}")
         end
       end
     end
 
+    def logout()
+      if File.exits?(@credentials)
+        File.delete(@credentials)
+        Escort::Logger.output.puts "removed #{@credentials}"
+      else
+        Escort::Logger.output.puts "already removed #{@credentials}"
+      end
+    end
 
     def sync_repo()
       # local scope the instance variables instead of changing scope - maybe
