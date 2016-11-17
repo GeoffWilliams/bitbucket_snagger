@@ -163,6 +163,7 @@ module BitbucketSnagger
         git clone #{url} #{working_dir} && \
         cd #{working_dir} && \
         git remote add upstream #{upstream} && \
+        git fetch --all && \
         git pull upstream master && \
         git push origin master --tags
       )
